@@ -1,0 +1,50 @@
+import matplotlib.pyplot as plt
+import networkx as nx
+
+person_relation = {
+    '张三':['老王','老张','小李','六六'],
+    '六六':['老孙','老钱','老赵'],
+    '老赵':['倩倩','红孩儿','奥巴马']
+}
+
+#搜索遍历图上所有的顶点
+def search_person(graph,start):
+    """
+
+    :param graph: 人机关系图
+    :param start: 开始搜索的人
+    :return: 返回遍历搜索的所有人
+    """
+    #用来保存从一点要扩展的其他的直连的人
+    need_to_check = [start]
+    #保存最后搜索出来的所有图中的点
+    alreay_knew = []
+    #循环从要扩展的列表中取出人来进行遍历并加入到最终的人员记录列表
+    while need_to_check:
+        #从要遍历的人员列表中拿出一个人进行进一步的扩展
+        #以广度优先搜索遍历来搜索图
+        # person = need_to_check.pop(0)
+        #以深度优先搜索遍历来搜索图
+        person = need_to_check.pop(-1)
+        #如果要扩展的人已经在搜索遍历的结果，该路径就扩展完了，在返回去从之前的泪飙中再找一个人进行扩展
+        if person in alreay_knew : continue
+        #把当前的所有直系朋友放到集合中准备继续扩展
+        new_expand = graph.get(person,[])
+        #并且要把这个新需要扩展的列表加入到要扩展的人群中，做一个记录当一条路径完成以后马上从这里拿出来经行下一步的扩展
+        need_to_check += new_expand
+        #每次扩展的人都加入到最终的人员名单中
+        alreay_knew.append(person)
+    #最后返回这个人员列单
+    return alreay_knew
+if __name__ == '__main__':
+    #从起点开始输出图中所有的点
+    print(search_person(person_relation, '张三'))
+
+    #使用networkx画出人际关系图
+    person_graph = nx.Graph(person_relation)
+    # 为了解决中文乱码
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.rcParams['axes.unicode_minus'] = False
+    # node_size就是图上标记的大小,node_color标记点的颜色
+    nx.draw(person_graph,  with_labels=True, node_size=100, node_color='red')
+    plt.show()
