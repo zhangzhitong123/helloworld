@@ -1,0 +1,61 @@
+import networkx as nx
+import matplotlib.pyplot as plt
+
+person_relation = {
+    '张三':['老王','老张','小李','六六'],
+    '六六':['老孙','老钱','老赵'],
+    '老赵':['倩倩','红孩儿','奥巴马']
+}
+
+def search_path(graph,start,destination):
+    """
+    :param graph: 城市之间的关系图
+    :param start:  起点城市
+    :param destination: 目的地（城市）
+    :return:
+    """
+    #在搜寻过程中把所有与当前城市的直接相连的城市加入进来
+    pathes_need_to_expand = [[start]]
+    #两地之间最短距离所要走过的城市
+    visited= set()
+
+    #看就当前城市来说还有没有直达的城市有的话继续遍历
+    #没有的话结束遍历
+    #pathes_need_to_expand存储的是从出发点开始到目的地的所有可走路径
+    while pathes_need_to_expand:
+        #按照队列出队的方式来遍历待访问的城市，广度优先遍历
+        #path保存的是所有路径中的一条路径，注意这里所有路径其实没有进行排序
+        # 所以这条路径只是单纯的从pathes_need_to_expand中选择最左边的一条路径进行继续扩展而并没有进行筛选
+        path  = pathes_need_to_expand.pop(0)
+        # path  = pathes_need_to_expand.pop(-1)
+        #froniter是path中选出的路径中的临时终点，等待下一步要进行继续往下扩展的点
+        #-1就是取路径上刚刚加进来的城市
+        froniter = path[-1]
+
+        if froniter in visited:continue
+
+        new_expanded = graph.get(froniter,[])
+
+        for n_city in new_expanded:
+            if n_city in path:continue
+
+            new_path = path + [n_city]
+
+            pathes_need_to_expand.append(new_path)
+
+            if n_city == destination:
+                return new_path
+
+        visited.add(froniter)
+
+if __name__  == '__main__':
+    print(search_path(graph=person_relation, start='张三', destination='奥巴马'))
+
+    # 使用networkx画出人际关系图
+    person_graph = nx.Graph(person_relation)
+    # 为了解决中文乱码
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.rcParams['axes.unicode_minus'] = False
+    # node_size就是图上标记的大小,node_color标记点的颜色
+    nx.draw(person_graph, with_labels=True, node_size=100, node_color='red')
+    plt.show()
