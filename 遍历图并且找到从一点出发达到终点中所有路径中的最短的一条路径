@@ -1,0 +1,183 @@
+# Author:张志通
+# -*- coding = utf-8 -*-
+# @Time :2021/8/10 18:54
+# @Author:张
+# @Site : 
+# @File : 搜索+路径排序实现所有的找最短路径法.py
+# @Software : PyCharm
+"""
+1、使用networkx对中国城市之间距离小于5千公里的城市进行连接以图的方式展示给读者
+2、紧接着研究了深度优先遍历和广度优先遍历来从一个点出发遍历图中所有点并输出
+3、然后计算两个城市之间最短的距离，将最短距离所经过的路线中的城市数出来
+"""
+import networkx as nx
+import matplotlib.pyplot as plt
+from collections import defaultdict
+import math
+
+
+
+threshold = 7 #这里代表的是小于5千公里的城市进行连接
+
+#这里的数据还不齐全自然从一个地方到另一个地方也不是很准确，但是大致上对于地图上从一点出发定位到另一个城市可以求出最短距离了
+#这就是高德地图等等导航的部分原理图了，只不过我们现在数据还不齐全同时每个街道我们还没有整合起来所以靠自己是实现不了
+#这样的庞大任务量只能是企业之间合作将数据共享过来才能完成
+city_info = {
+    "兰州":[103.73,36.03],
+    "嘉峪关":[98.17,39.47],
+    "西宁":[101.74,36.56],
+    "成都":[104.06,30.67],
+    "石家庄":[114.48,38.03],
+    "拉萨":[102.73,25.04],
+    "贵阳":[106.71,26.57],
+    "武汉":[114.31,30.52],
+    "郑州":[113.65,34.76],
+    "济南":[117.0,36.65],
+    "南京":[118.78,32.04],
+    "合肥":[117.27,31.86],
+    "杭州":[120.19,30.26],
+    "南昌":[115.89,28.68],
+    "福州":[119.3,26.08],
+    "广州":[113.23,23.16],
+    "长沙":[113.0,28.21],
+    "沈阳":[123.38,41.8],
+    "长春":[125.35,43.88],
+    "哈尔滨":[126.63,45.75],
+    "太原":[112.53,37.87],
+    "西安":[108.95,34.27],
+    "北京":[116.46,39.92],
+    "上海":[121.48,31.22],
+    "重庆":[106.54,29.59],
+    "香港":[114.12,22.26],
+    "天津":[117.2,39.13]
+}
+
+
+def get_city_distance(c1,c2):
+    return math.sqrt(((city_info[c1][0]-city_info[c2][0]) ** 2 + (city_info[c1][1]-city_info[c2][1]) ** 2))
+#
+#
+def build_connection(city_info):
+    cities_connection = defaultdict(list)
+    cities = list(city_info.keys())
+    for c1 in cities:
+        for c2 in cities:
+            if c1 != c2:
+                if get_city_distance(c1,c2) < threshold:
+                    cities_connection[c1].append(c2)
+    return cities_connection
+
+
+#注意此搜索方法只是采用深度优先搜索或者广度优先搜索实现了从一点出发到目的地时所需要经历的城市
+#并没有找到两个城市之间路径最短
+#要想找到最短路径就需要集合相应的算法，通过对路径经行排序来找到最短的路径
+#好的算法有迪杰斯特拉算法，佛洛依德算法等等都是找最优路径
+#我也可以自己去实现以下，我已经直到了每次扩展的路径都保存在了pathes_need_to_expand里面，只要求出该集合中的所有路径的距离
+#然后进行排序就好了
+#但是这里其实如果按照我的思想来说要找到最优的哪个结果，就是等到最后一步将所有的路径都求出来之后在经行求最短路径
+#可是如果城市之间如果扩展出来的路径相当的大的话，我的这种方法很可能遇到很大的问题
+
+#所以人们就想到了一遍扩展路径一遍找寻最优解的方式这样会加快最优搜索，也可以避免搜寻的路径多的时候再往出找最优解可能遇到时间上和内存上的性能问题
+#所以还需要我们去研究相应的算法来解决这一问题，那就是迪杰斯特拉等相关算法。
+def search_1(graph,start,destination):
+    """
+    :param graph: 城市之间的关系图
+    :param start:  起点城市
+    :param destination: 目的地（城市）
+    :return:
+    """
+    #在搜寻过程中把所有与当前城市的直接相连的城市加入进来
+    pathes_need_to_expand = [[start]]
+    #两地之间最短距离所要走过的城市
+    visited= set()
+
+    #看就当前城市来说还有没有直达的城市有的话继续遍历
+    #没有的话结束遍历
+    #pathes_need_to_expand存储的是从出发点开始到目的地的所有可走路径
+    while pathes_need_to_expand:
+        #按照队列出队的方式来遍历待访问的城市，广度优先遍历
+        #path保存的是所有路径中的一条路径，注意这里所有路径其实没有进行排序
+        # 所以这条路径只是单纯的从pathes_need_to_expand中选择最左边的一条路径进行继续扩展而并没有进行筛选
+        path  = pathes_need_to_expand.pop(0)
+        #path  = pathes_need_to_expand.pop(-1)
+        #froniter是path中选出的路径中的临时终点，等待下一步要进行继续往下扩展的点
+        #-1就是取路径上刚刚加进来的城市
+        froniter = path[-1]
+
+        if froniter in visited:continue
+
+        new_expanded = graph[froniter]
+
+        for n_city in new_expanded:
+            if n_city in path:continue
+
+            new_path = path + [n_city]
+
+            pathes_need_to_expand.append(new_path)
+
+            if n_city == destination:
+                return new_path
+
+        visited.add(froniter)
+
+def search_2(graph,start,destination,search_strategy):
+    pathes = [[start]]
+
+    while pathes:
+        path = pathes.pop(0)
+        # path = pathes.pop(-1)
+        froniter = path[-1]
+
+        #这样好理解就是遭到当前城市的所有与他相连的城市并给successors但是只能针对广度优先搜索遍历方法
+        successors = graph[froniter]
+        #要想广度和深度优先搜索遍历都能够应用自如只能使用如下代码
+        # successors = graph.get(froniter,[])
+
+        for city in successors:
+            if city in path:continue
+
+            new_path = path + [city]
+
+            pathes.append(new_path)
+
+        pathes = search_strategy(pathes)
+
+
+        if pathes and (destination == pathes[0][-1]):
+            return pathes[0]
+
+def sort_by_distance(pathes):
+    def get_distance_of_path(path):
+        distance = 0
+        for i,_ in enumerate(path[:-1]):
+            distance += get_city_distance(path[i],path[i+1])
+        return distance
+    return sorted(pathes,key=get_distance_of_path)
+
+# def get_distance_of_path(path):
+#     distance = 0
+#     for i,_ in enumerate(path[:-1]):
+#         distance += get_city_distance(path[i],path[i+1])
+#     return distance
+#
+#
+# print(get_distance_of_path(['北京', '济南', '上海']))
+
+
+
+cities_connection = build_connection(city_info)
+# print(cities_connection)
+#现在图像是全连接任何两个城市都可以直达，所以需要去安排路径排序算法才可以找出最短的路径
+# print(search_1(cities_connection, "北京", "上海"))
+# print(search_2(cities_connection, "北京", "上海",search_strategy=sort_by_distance))
+#可以找到最优路劲但是对于如果遍历的结果太多的的话计算的时候会花费很长时间
+#下面这个就计算不出来
+print(search_2(cities_connection, "北京", "上海",search_strategy=sort_by_distance))
+
+city_graph = nx.Graph(cities_connection)
+#为了解决中文乱码
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+#node_size就是图上标记的大小,node_color标记点的颜色
+nx.draw(city_graph,city_info,with_labels=True,node_size=100,node_color='red')
+plt.show()
