@@ -1,0 +1,59 @@
+# Author:张志通
+# -*- coding = utf-8 -*-
+# @Time :2021/8/20 15:14
+# @Author:张
+# @Site : 
+# @File : water_pouring.py
+# @Software : PyCharm
+
+# (0, 0), 90, 40
+# (60, -), (-, 60)
+#这里使用了图的优先遍历你接下来就是要熟悉什么样的场景用图的搜索遍历要会转化
+#其次就是要掌握其中的实现细节，看来这段代码真的是用处很大
+
+#这个确实与地图搜索找最短路径有很大的相似处，都是给定了初始状态，然后从一个初始状态出发达到我们想要的结果
+
+def successors(x, y, X, Y):
+    return {
+        (0, y): '倒空x',
+        (x, 0): '倒空y',
+        (x + y - Y, Y) if x + y >= Y else (0, x + y): 'x倒入y中',
+        (X, x + y - X) if y + x >= X else (x + y, 0): 'y倒入x中',
+        (X, y): '装满x',
+        (x, Y): '装满y'
+    }
+
+
+def search_solution(capacity1, capacity2, goal, start=(0, 0)):
+    paths =  [[('init', start)]]
+
+    explored = set()
+
+    while paths:
+        path = paths.pop(-1)
+        frontier = path[-1]
+        (x, y) = frontier[-1]
+
+        for state, action in successors(x, y, capacity1, capacity2).items():
+            # ic(frontier, state, action)
+            if state in explored: continue
+
+            new_path = path + [ (action, state) ] #修改原路径为新扩展进来的路径
+
+            if goal in state:
+                return new_path
+            else:
+                paths.append(new_path)
+
+            explored.add(state)
+
+    return None
+
+
+if __name__ == '__main__':
+    path = search_solution(90, 40, 20, (90, 0))
+    #path保存着水杯和水池之间因该如何倒水
+    for p in path:
+        print('--=>')
+        print(p)
+
